@@ -50,8 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       image: null,
     }));
 
-    
-    res.status(200).json(devotionals);
+    res.status(200).json({ devotionals });
   } catch (error) {
     console.error("Error processing file:", error);
     res.status(500).json({ error: "Error processing the file." });
