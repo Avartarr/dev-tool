@@ -106,7 +106,8 @@ export default function Home() {
 
     const payload = {
       content: devotional.content || "",
-      date: devotional.day.toString(),
+      // date: devotional.day.toString(),
+      date: new Date().toISOString().split("T")[0],
       declaration: devotional.declaration || "",
       focus:
         typeof devotional.focus === "string"
