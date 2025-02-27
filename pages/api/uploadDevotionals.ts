@@ -44,11 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dayPattern = /(\d+)\.\s*([\s\S]*?)(?=\n\s*\d+\.\s*|$)/g;
     const matches = [...text.matchAll(dayPattern)];
 
-    // const devotionals = matches.map(match => ({
-    //   day: Number(match[1]),
-    //   content: match[2].trim(),
-    //   image: null,
-    // }));
+   
 
     const devotionals = matches.map(match => {
       const blockText = match[2].trim();
@@ -104,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         content,
         furtherReading,
         declaration,
-        image: null, // placeholder for an uploaded image
+        
       };
     });
     
