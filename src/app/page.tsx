@@ -67,6 +67,9 @@ export default function Home() {
     }
   };
 
+  const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dqct6vekp/image/upload";
+  const CLOUDINARY_PRESET = "devotional"; 
+
   const handleImageChange = (
     day: number,
     e: React.ChangeEvent<HTMLInputElement>
@@ -79,34 +82,47 @@ export default function Home() {
     }
   };
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
+
+  const uploadImageToCloudinary = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_PRESET);
+    formData.append("folder", "soj"); // Upload to the "soj" folder
+  
+    try {
+      const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+  
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      return null;
+    }
   };
+
 
   const handleUploadDevotional = async (devotional: Devotional) => {
     const imageFile = devotionalImages[devotional.day];
-    let coverImageObj = {};
+    let cloudinaryImageUrl = devotional.coverImageUrl || "";
+
     if (imageFile) {
-      try {
-        const base64Image = await convertFileToBase64(imageFile);
-        coverImageObj = {
-          name: imageFile.name,
-          type: imageFile.type,
-          data: base64Image,
-        };
-      } catch (error) {
-        console.error("Error converting file to base64", error);
+      const uploadedUrl = await uploadImageToCloudinary(imageFile);
+      if (!uploadedUrl) {
+        console.error("Image upload failed. Devotional not uploaded.");
+        return;
       }
+      cloudinaryImageUrl = uploadedUrl;
     }
 
     const payload = {
       content: devotional.content || "",
-      // date: devotional.day.toString(),
       date: new Date().toISOString().split("T")[0],
       declaration: devotional.declaration || "",
       focus:
@@ -126,14 +142,16 @@ export default function Home() {
           ? { reference: devotional.memoryVerse }
           : devotional.memoryVerse || {},
       title: devotional.title || "",
-      coverImage: coverImageObj,
-      coverImageUrl: devotional.coverImageUrl || "Image",
+      coverImage: imageFile ? [{ day: devotional.day, image: cloudinaryImageUrl }] : [],
+      coverImageUrl: cloudinaryImageUrl || "Image",
       author: devotional.author || "Default Author",
       isLegacy: devotional.isLegacy !== undefined ? devotional.isLegacy : true,
     };
 
     try {
       const response = await fetch("https://api.streamsofjoy.app/devotional", {
+      // const response = await fetch("https://api.dukiapreciousmetals.co/api/devo", {
+
         method: "POST",
         headers: {
           Accept: "application/json",
